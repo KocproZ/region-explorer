@@ -1,5 +1,10 @@
 package me.kocproz.regionedit
 
+import kotlinx.serialization.decodeFromByteArray
+import net.benwoodworth.knbt.Nbt
+import net.benwoodworth.knbt.NbtCompound
+import net.benwoodworth.knbt.NbtCompression
+import net.benwoodworth.knbt.NbtVariant
 import java.io.File
 import java.io.RandomAccessFile
 import java.time.Instant
@@ -55,21 +60,33 @@ class RegionFile(private val fileName: File) {
             if (offset == 0) return@mapIndexedNotNull null
             val sectorPosition = offsetToSector(offset)
 
-            RandomAccessFile(fileName, "r").use {
+            RandomAccessFile(fileName, "r").use { file ->
+                file.seek((sectorPosition.first * BYTES_IN_SECTOR).toLong())
+                val lengthInBytes = file.readInt()
+                val compressionScheme = file.readByte()
 
+                val nbtMetadata = Nbt {
+                    variant = NbtVariant.Java
+                    compression = compressionToEnum(compressionScheme)
+                    ignoreUnknownKeys = false
+                    encodeDefaults = false
+                }
+
+                val nbtData = ByteArray(lengthInBytes)
+                file.read(nbtData)
+
+                Chunk(
+                    position = i,
+                    chunkX = i % 32,
+                    chunkZ = floor((i / 32).toDouble()).toInt(),
+                    firstSectorPosition = sectorPosition.first,
+                    sizeInSectors = sectorPosition.second,
+                    lastModified = Instant.ofEpochSecond(chunkTimestamps[i].toLong()),
+                    lengthInBytes = lengthInBytes,
+                    compressionScheme = compressionScheme,
+                    nbtData = tryOrNull { nbtMetadata.decodeFromByteArray<NbtCompound>(nbtData)[""] }
+                )
             }
-
-
-            Chunk(
-                position = i,
-                chunkX = i % 32,
-                chunkZ = floor((i / 32).toDouble()).toInt(),
-                firstSectorPosition = sectorPosition.first,
-                sizeInSectors = sectorPosition.second,
-                lastModified = Instant.ofEpochSecond(chunkTimestamps[i].toLong()),
-                sizeInBytes = -1,
-                nbtData = null
-            )
         }
 
     /**
@@ -81,4 +98,15 @@ class RegionFile(private val fileName: File) {
         return Pair((offset shr 8) and 0xFFFFFF, offset and 0xFF)
     }
 
+    private fun compressionToEnum(flag: Byte) =
+        when (flag) {
+            0.toByte() -> NbtCompression.None
+            1.toByte() -> NbtCompression.Gzip
+            2.toByte() -> NbtCompression.Zlib
+            else -> {
+//                throw IllegalArgumentException("Flag $flag out of bounds <0-2>")
+                println("WARN")
+                NbtCompression.Zlib
+            }
+        }
 }

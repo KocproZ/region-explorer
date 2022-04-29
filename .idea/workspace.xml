@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3a145915-6346-40ba-9a6f-c6e697f5b076" name="Changes" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/Chunk.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/RegionFile.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="3a145915-6346-40ba-9a6f-c6e697f5b076" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/Utils.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/Chunk.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/Chunk.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/RegionEditor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/RegionEditor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/RegionFile.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/me.kocproz.regionedit/RegionFile.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,18 +71,20 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "C:/Users/Kocyk/IdeaProjects/nbt-region-editor/data",
+    "last_opened_file_path": "C:/Users/Kocyk/IdeaProjects/nbt-region-editor/src/main/kotlin/me.kocproz.regionedit",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)"
   },
   "keyToStringList": {
     "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "NBTT",
       "kotlin"
     ]
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Kocyk\IdeaProjects\nbt-region-editor\src\main\kotlin\me.kocproz.regionedit" />
       <recent name="C:\Users\Kocyk\IdeaProjects\nbt-region-editor\data" />
     </key>
   </component>
@@ -108,7 +110,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1651151529956</updated>
-      <workItem from="1651151531329" duration="26051000" />
+      <workItem from="1651151531329" duration="30082000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <created>1651152891925</created>
@@ -117,14 +119,34 @@
       <option name="project" value="LOCAL" />
       <updated>1651152891925</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="File loading">
+      <created>1651193961680</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1651193961680</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
+    <MESSAGE value="File loading" />
+    <option name="LAST_COMMIT_MESSAGE" value="File loading" />
+    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
 </project>

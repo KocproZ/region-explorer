@@ -16,6 +16,12 @@ data class Chunk(
     val sizeInSectors: Int,
     val lastModified: Instant,
 
-    val sizeInBytes: Int,
+    val lengthInBytes: Int,
+    /** 0 = None, 1 = gzip, 2 = zlib **/
+    val compressionScheme: Byte,
     val nbtData: NbtTag?
-)
+) {
+    override fun toString(): String {
+        return "Chunk(position=$position, chunkX=$chunkX, chunkZ=$chunkZ, firstSectorPosition=$firstSectorPosition, sizeInSectors=$sizeInSectors, lastModified=$lastModified, lengthInBytes=$lengthInBytes, compressionScheme=$compressionScheme)"
+    }
+}

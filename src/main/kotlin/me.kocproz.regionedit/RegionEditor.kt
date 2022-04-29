@@ -17,22 +17,26 @@ import androidx.compose.ui.window.rememberWindowState
 import kotlin.io.path.Path
 
 fun main(args: Array<String>) {
-    val regionFile = Path("data/r.-10.-8.mca")
+    val regionFile = Path("data/r.-10.-9.mca")
 
     val region = RegionFile(regionFile.toFile())
-    region
-        .buildChunks()
-        .sortedByDescending { it.sizeInSectors }
-        .forEach { chunk ->
-            println(chunk)
-        }
+    measureTimeMillisAndPrintTime("Building chunks: ") {
+        region
+            .buildChunks()
+            .sortedByDescending { it.lengthInBytes }
+            .forEach { chunk ->
+                println(chunk)
+            }
+    }
+
+//    runApplication()
 }
 
 fun runApplication() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Compose for Desktop",
-        state = rememberWindowState(width = 300.dp, height = 300.dp)
+        title = "Region Viewer",
+        state = rememberWindowState(width = 480.dp, height = 560.dp)
     ) {
         val count = remember { mutableStateOf(0) }
         MaterialTheme {
