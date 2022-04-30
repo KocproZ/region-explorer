@@ -54,49 +54,73 @@ class RegionFile(private val fileName: File) {
         }
     }
 
-    fun buildChunks(): List<Chunk> = offsets
-        .asList()
-        .mapIndexedNotNull { i, offset ->
-            if (offset == 0) return@mapIndexedNotNull null
-            val sectorPosition = offsetToSector(offset)
+    fun chunkPresent(location: Int): Boolean = offsets[location] != 0
 
+    /**
+     * Returns all chunks in file
+     */
+    fun buildChunks(): List<Chunk> =
+        buildChunks(*(0 until INTS_IN_SECTOR).toList().toIntArray())
+
+    /**
+     * Returns chunks at given locations
+     * Ignores locations without chunks
+     */
+    fun buildChunks(vararg locations: Int): List<Chunk> = locations
+        .toList()
+        .mapNotNull { location ->
+            if (chunkPresent(location)) location else null
+        }.let { indexes ->
             RandomAccessFile(fileName, "r").use { file ->
-                file.seek((sectorPosition.first * BYTES_IN_SECTOR).toLong())
-                val lengthInBytes = file.readInt()
-                val compressionScheme = file.readByte()
-
-                val nbtMetadata = Nbt {
-                    variant = NbtVariant.Java
-                    compression = compressionToEnum(compressionScheme)
-                    ignoreUnknownKeys = false
-                    encodeDefaults = false
+                indexes.map { index ->
+                    buildChunk(index, file)!!
                 }
-
-                val nbtData = ByteArray(lengthInBytes)
-                file.read(nbtData)
-
-                Chunk(
-                    position = i,
-                    chunkX = i % 32,
-                    chunkZ = floor((i / 32).toDouble()).toInt(),
-                    firstSectorPosition = sectorPosition.first,
-                    sizeInSectors = sectorPosition.second,
-                    lastModified = Instant.ofEpochSecond(chunkTimestamps[i].toLong()),
-                    lengthInBytes = lengthInBytes,
-                    compressionScheme = compressionScheme,
-                    nbtData = tryOrNull { nbtMetadata.decodeFromByteArray<NbtCompound>(nbtData)[""] }
-                )
             }
         }
+
+    private fun buildChunk(location: Int, file: RandomAccessFile): Chunk? {
+        if (location < 0 || location > INTS_IN_SECTOR)
+            throw IllegalArgumentException("Location ($location) out of bounds <0, 1023>")
+
+        return offsets[location].let { offset ->
+            if (offsets[location] == 0) return null
+            val sectorPosition = offsetToSector(offset)
+
+            file.seek((sectorPosition.first * BYTES_IN_SECTOR).toLong())
+            val lengthInBytes = file.readInt()
+            val compressionScheme = file.readByte()
+
+            val nbtMetadata = Nbt {
+                variant = NbtVariant.Java
+                compression = compressionToEnum(compressionScheme)
+                ignoreUnknownKeys = false
+                encodeDefaults = false
+            }
+
+            val nbtData = ByteArray(lengthInBytes)
+            file.read(nbtData)
+
+            Chunk(
+                position = location,
+                chunkX = location % 32,
+                chunkZ = floor((location / 32).toDouble()).toInt(),
+                firstSectorPosition = sectorPosition.first,
+                sizeInSectors = sectorPosition.second,
+                lastModified = Instant.ofEpochSecond(chunkTimestamps[location].toLong()),
+                lengthInBytes = lengthInBytes,
+                compressionScheme = compressionScheme,
+                nbtData = tryOrNull { nbtMetadata.decodeFromByteArray<NbtCompound>(nbtData)[""] }
+            )
+        }
+    }
 
     /**
      * Returns where the chunk starts in file in bytes
      */
     private fun chunkPosToOffset(x: Int, z: Int) = 4 * (x + z * 32)
 
-    private fun offsetToSector(offset: Int): Pair<Int, Int> {
-        return Pair((offset shr 8) and 0xFFFFFF, offset and 0xFF)
-    }
+    private fun offsetToSector(offset: Int): Pair<Int, Int> =
+        Pair((offset shr 8) and 0xFFFFFF, offset and 0xFF)
 
     private fun compressionToEnum(flag: Byte) =
         when (flag) {
@@ -105,8 +129,8 @@ class RegionFile(private val fileName: File) {
             2.toByte() -> NbtCompression.Zlib
             else -> {
 //                throw IllegalArgumentException("Flag $flag out of bounds <0-2>")
-                println("WARN")
-                NbtCompression.Zlib
+                println("Flag $flag out of bounds <0-2>, possible file corruption")
+                NbtCompression.None
             }
         }
 }
