@@ -1,6 +1,7 @@
 package me.kocproz.regionedit
 
 import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import net.benwoodworth.knbt.Nbt
 import net.benwoodworth.knbt.NbtCompound
 import net.benwoodworth.knbt.NbtCompression
@@ -8,7 +9,7 @@ import net.benwoodworth.knbt.NbtVariant
 import java.io.File
 import java.io.RandomAccessFile
 import java.time.Instant
-import kotlin.math.floor
+import kotlin.math.ceil
 
 class RegionFile(private val fileName: File) {
 
@@ -16,6 +17,13 @@ class RegionFile(private val fileName: File) {
         val BYTES_IN_SECTOR = 4096
         val INTS_IN_SECTOR = BYTES_IN_SECTOR / 4
         val CHUNK_HEADER_SIZE = 5
+
+        val NBT_METADATA_NO_COMPRESSION = Nbt {
+            variant = NbtVariant.Java
+            compression = NbtCompression.None
+            ignoreUnknownKeys = false
+            encodeDefaults = false
+        }
     }
 
     val sectors: Int
@@ -51,6 +59,52 @@ class RegionFile(private val fileName: File) {
         }
         for (i in 0 until INTS_IN_SECTOR) {
             chunkTimestamps[i] = file.readInt()
+        }
+    }
+
+    fun save() {
+        saveAs(fileName)
+    }
+
+    fun saveAs(fileName: File) {
+        if (!fileName.exists()) fileName.createNewFile()
+        RandomAccessFile(fileName, "rw").use { file ->
+            file.seek(0)
+            for (off in offsets) {
+                file.writeInt(0)
+            }
+            for (ts in chunkTimestamps) {
+                file.writeInt(ts)
+            }
+
+            var currentSector = 2
+            buildChunks()
+                .sortedBy { it.firstSectorPosition }
+                .forEach { chunk ->
+                    val nbtMetadata = Nbt {
+                        variant = NbtVariant.Java
+                        compression = compressionToEnum(chunk.compressionScheme)
+                        ignoreUnknownKeys = false
+                        encodeDefaults = false
+                    }
+
+                    val encodedNbt = nbtMetadata.encodeToByteArray(chunk.nbtData!!)
+                    val lengthInSectors = ceil((encodedNbt.size + 5.0) / BYTES_IN_SECTOR).toInt()
+                    val fillerBytes = BYTES_IN_SECTOR - ((encodedNbt.size + 5) % BYTES_IN_SECTOR)
+
+                    // Write chunk data
+                    file.seek((currentSector * BYTES_IN_SECTOR).toLong())
+                    file.writeInt(encodedNbt.size)
+                    file.writeByte(chunk.compressionScheme.toInt())
+                    file.write(encodedNbt)
+                    file.write(ByteArray(fillerBytes))
+
+                    // Modify offset data
+                    file.seek(chunk.position * 4L)
+                    file.writeInt(createOffset(currentSector, lengthInSectors))
+
+                    currentSector += lengthInSectors
+                }
         }
     }
 
@@ -100,16 +154,18 @@ class RegionFile(private val fileName: File) {
             val nbtData = ByteArray(lengthInBytes)
             file.read(nbtData)
 
+            val decodedNbtData = tryOrNull { nbtMetadata.decodeFromByteArray<NbtCompound>(nbtData) }
+
             Chunk(
                 position = location,
                 chunkX = location % 32,
-                chunkZ = floor((location / 32).toDouble()).toInt(),
+                chunkZ = location / 32,
                 firstSectorPosition = sectorPosition.first,
                 sizeInSectors = sectorPosition.second,
                 lastModified = Instant.ofEpochSecond(chunkTimestamps[location].toLong()),
                 lengthInBytes = lengthInBytes,
                 compressionScheme = compressionScheme,
-                nbtData = tryOrNull { nbtMetadata.decodeFromByteArray<NbtCompound>(nbtData)[""] }
+                nbtData = decodedNbtData
             )
         }
     }
@@ -122,6 +178,9 @@ class RegionFile(private val fileName: File) {
     private fun offsetToSector(offset: Int): Pair<Int, Int> =
         Pair((offset shr 8) and 0xFFFFFF, offset and 0xFF)
 
+    private fun createOffset(sector: Int, size: Int): Int =
+        (sector shl 8) or (size and 0xFF)
+
     private fun compressionToEnum(flag: Byte) =
         when (flag) {
             0.toByte() -> NbtCompression.None
@@ -133,4 +192,5 @@ class RegionFile(private val fileName: File) {
                 NbtCompression.None
             }
         }
+
 }
